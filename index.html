@@ -2334,7 +2334,7 @@ const PIPE = [
     id:'p4', company:'Nexus Cloud Technologies', industry:'saas', industryLabel:'SaaS / Technology',
     size:'501–5,000', goals:['churn','nps','prod'], stage:'implementing', stageLabel:'Implementing',
     updated:'May 3, 2026', contact:'David Park', sf:true, sfOpp:'Nexus - Platform XM',
-    intel:'synthetic',
+    intel:'synthetic', maturity:'b',
     notes:'Contract signed May 3. Synthetic dashboard live. Phase 1 onboarding underway.',
     agentNote:{text:'Synthetic → live transition in ~23 days · Auto-updating',cls:''}
   },
@@ -2350,7 +2350,7 @@ const PIPE = [
     id:'p6', company:'Harlow Financial Partners', industry:'financial', industryLabel:'Financial Services',
     size:'501–5,000', goals:['nps','emp','churn'], stage:'live', stageLabel:'Live — Real Data',
     updated:'May 1, 2026', contact:'Maya Thornton', sf:true, sfOpp:'Harlow - XM Platform (Closed)',
-    intel:'live',
+    intel:'live', maturity:'c',
     notes:'Real data active since April 18. NPS tracking at +44, 6 pts above benchmark median. EX correlation visible.',
     agentNote:{text:'NPS +44 · 6 pts above median · Champion path in range',cls:'ok'}
   },
@@ -2358,7 +2358,7 @@ const PIPE = [
     id:'p7', company:'Crestwood Manufacturing', industry:'manufacturing', industryLabel:'Manufacturing',
     size:'5,000+', goals:['emp','nps'], stage:'live', stageLabel:'Live — Real Data',
     updated:'Apr 28, 2026', contact:'James Park', sf:true, sfOpp:'Crestwood - EX + CX',
-    intel:'live',
+    intel:'live', maturity:'c',
     notes:'Live since March. EX engagement up 7pts. NPS at +38 vs benchmark median +31. Champion threshold in sight.',
     agentNote:{text:'EX ↑7 pts · Recalibration complete · Champion threshold close',cls:'ok'}
   }
@@ -2758,7 +2758,9 @@ function loadProspect(id){
   S.industry = p.industry;
   S.size = p.size;
   S.goals = new Set(p.goals);
+  if(p.maturity) S.maturity = p.maturity;
   const isSigned = p.stage==='signed'||p.stage==='implementing'||p.stage==='live';
+  _implUnlocked = isSigned;
   setProspectContext(p.company, isSigned);
   // Route to the right screen based on stage
   if(p.stage==='discovery'){
@@ -3677,9 +3679,17 @@ function buildImpl(){
   }
   const data=d();
   const phases=data.phases||DEF.phases;
+  // Find the current prospect to get stage-aware context
+  const curP = PIPE.find(x=>x.company===S.company);
+  const curStage = curP ? curP.stage : 'implementing';
   document.getElementById('implH').textContent=(S.company||'Your Company')+' — Implementation Hub';
-  document.getElementById('implPhaseBadge').textContent='Phase 1 · First 30 days';
-  document.getElementById('implDateBadge').textContent='Started May 2025';
+  if(curStage==='live'){
+    document.getElementById('implPhaseBadge').textContent='Phase 3 · Live & Optimising';
+    document.getElementById('implDateBadge').textContent=curP&&curP.updated?'Active since '+curP.updated:'Active';
+  } else {
+    document.getElementById('implPhaseBadge').textContent='Phase 1 · First 30 days';
+    document.getElementById('implDateBadge').textContent='Started May 2026';
+  }
   document.getElementById('implIndustrBadge').textContent=data.label;
 
   // ── Checklist ──
