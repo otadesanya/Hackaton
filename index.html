@@ -2308,7 +2308,7 @@ function getGoalLens(){
 const PIPE = [
   {
     id:'p1', company:'Meridian Health Systems', industry:'healthcare', industryLabel:'Healthcare',
-    size:'5,000+', goals:['churn','nps','emp'], stage:'shared', stageLabel:'Shared with Prospect',
+    size:'5,000+', goals:['churn','nps','emp'], stage:'shared', stageLabel:'Shared with Prospect', maturity:'b',
     updated:'May 12, 2026', contact:'Laura Chen', sf:true, sfOpp:'MHS - Enterprise XM 2026',
     intel:'benchmark',
     notes:'Benchmarked against 284 healthcare companies. Blueprint shared May 12 — prospect team reviewing.',
@@ -2316,7 +2316,7 @@ const PIPE = [
   },
   {
     id:'p2', company:'Apex Financial Group', industry:'financial', industryLabel:'Financial Services',
-    size:'501–5,000', goals:['nps','brand'], stage:'discovery', stageLabel:'Discovery In Progress',
+    size:'501–5,000', goals:['nps','brand'], stage:'discovery', stageLabel:'Discovery In Progress', maturity:'a',
     updated:'May 13, 2026', contact:'James Okafor', sf:true, sfOpp:'Apex - CX + Brand 2026',
     intel:'benchmark',
     notes:'Profile complete, goals set. Generating benchmark now.',
@@ -2324,7 +2324,7 @@ const PIPE = [
   },
   {
     id:'p3', company:'Brightleaf Retail Co.', industry:'retail', industryLabel:'Retail & eCommerce',
-    size:'51–500', goals:['nps','prod'], stage:'discovery', stageLabel:'Discovery In Progress',
+    size:'51–500', goals:['nps','prod'], stage:'discovery', stageLabel:'Discovery In Progress', maturity:'a',
     updated:'May 14, 2026', contact:'Sofia Reyes', sf:false,
     intel:'benchmark',
     notes:'First call in progress — entering profile now.',
@@ -2340,7 +2340,7 @@ const PIPE = [
   },
   {
     id:'p5', company:'Volta Telecom', industry:'telecom', industryLabel:'Telecommunications',
-    size:'5,000+', goals:['nps','emp'], stage:'discovery', stageLabel:'Discovery In Progress',
+    size:'5,000+', goals:['nps','emp'], stage:'discovery', stageLabel:'Discovery In Progress', maturity:'b',
     updated:'May 9, 2026', contact:'Priya Nair', sf:false,
     intel:'benchmark',
     notes:'Profile entered. Benchmark comparison in progress.',
@@ -2761,36 +2761,42 @@ function loadProspect(id){
   if(p.maturity) S.maturity = p.maturity;
   const isSigned = p.stage==='signed'||p.stage==='implementing'||p.stage==='live';
   _implUnlocked = isSigned;
+  if(p.stage==='live') S._liveId = p.id;
   setProspectContext(p.company, isSigned);
-  // Route to the right screen based on stage
-  if(p.stage==='discovery'){
-    setTimeout(()=>{
-      const cN=document.getElementById('cN');if(cN)cN.value=p.company;
-      const cI=document.getElementById('cI');if(cI)cI.value=p.industry;
-      const szMap={'1–50':'a','51–500':'b','501–5,000':'c','5,000+':'d'};
-      const sz=szMap[p.size]||'c';
-      pickSz(sz);
-      chkP();
-    },50);
-    show('profile');
-    document.getElementById('tbTitle').textContent='ExperienceIQ';
-    document.getElementById('lp-projects').classList.add('hidden');
-    document.getElementById('lp-eiq').classList.remove('hidden');
-    // active ctx item
-    ['lp-ctx-discovery','lp-ctx-client','lp-ctx-impl'].forEach(x=>{
-      const el=document.getElementById(x); if(el)el.classList.remove('active');
+
+  // Always open from the profile screen so the full lifecycle story is navigable.
+  // For signed/implementing/live prospects the impl hub is already unlocked,
+  // so the user can Continue all the way through and reach it naturally.
+  document.getElementById('tbTitle').textContent='ExperienceIQ';
+  document.getElementById('lp-projects').classList.add('hidden');
+  document.getElementById('lp-eiq').classList.remove('hidden');
+  ['lp-ctx-discovery','lp-ctx-client','lp-ctx-impl'].forEach(x=>{
+    const el=document.getElementById(x); if(el) el.classList.remove('active');
+  });
+  const disc=document.getElementById('lp-ctx-discovery'); if(disc) disc.classList.add('active');
+
+  setTimeout(()=>{
+    // Pre-fill profile form
+    const cN=document.getElementById('cN'); if(cN) cN.value=p.company;
+    const cI=document.getElementById('cI'); if(cI) cI.value=p.industry;
+    const cM=document.getElementById('cM'); if(cM) cM.value=p.maturity||'b';
+    const szMap={'1–50':'a','51–500':'b','501–5,000':'c','5,000+':'d'};
+    pickSz(szMap[p.size]||'c');
+    chkP();
+    // Pre-select goals on goals screen
+    ['churn','nps','emp','brand','prod','cx'].forEach(g=>{
+      const el=document.getElementById('g-'+g);
+      if(el){
+        const on=p.goals.includes(g);
+        el.classList.toggle('sel',on);
+        if(on) S.goals.add(g); else S.goals.delete(g);
+      }
     });
-    const disc=document.getElementById('lp-ctx-discovery'); if(disc) disc.classList.add('active');
-  } else if(p.stage==='shared'){
-    buildShare();
-    setProspectContext(p.company, false);
-  } else if(p.stage==='live'){
-    S._liveId=p.id;
-    buildLive();
-  } else if(isSigned){
-    buildImpl();
-    setProspectContext(p.company, true);
-  }
+    const gBtn=document.getElementById('gBtn');
+    if(gBtn) gBtn.disabled=S.goals.size===0;
+  },50);
+
+  show('profile');
 }
 
 function openEIQ(){
